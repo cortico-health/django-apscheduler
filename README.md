@@ -1,6 +1,8 @@
 Django APScheduler
 ==================
 
+This is a fork by Cortico to allow soft deletion of jobs, to prevent a race condition where jobs are deleted when executions still exist, in a case that does not allow cascaded deletion (likely due to transaction management). In addition, the soft deletion allows us to debug dynamically created jobs.
+
 [![PyPI](https://img.shields.io/pypi/v/django-apscheduler)](https://pypi.org/project/django-apscheduler/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-apscheduler)](https://pypi.org/project/django-apscheduler/)
 [![PyPI - Django Version](https://img.shields.io/pypi/djversions/django-apscheduler)](https://pypi.org/project/django-apscheduler/)
@@ -222,6 +224,18 @@ If you encounter any kind of 'lost connection' errors then it probably means tha
   [pgbouncer](https://www.pgbouncer.org), to manage database connections for you.
 - your database server has crashed / been restarted.
   Django [will not reconnect automatically](https://code.djangoproject.com/ticket/24810).
+
+Tests
+-----
+
+To run the tests,
+
+```
+pip install -r requirements/local.txt
+py.test
+```
+
+Or with Docker, `docker build . -t django-apscheduler-test`, `docker run -it django-apscheduler-test`
 
 Project resources
 -----------------

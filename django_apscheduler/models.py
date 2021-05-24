@@ -16,7 +16,7 @@ class DjangoJob(models.Model):
     id = models.CharField(
         max_length=255, primary_key=True, help_text=_("Unique id for this job.")
     )
-
+    deleted = models.BooleanField(default=False)
     next_run_time = models.DateTimeField(
         db_index=True,
         blank=True,

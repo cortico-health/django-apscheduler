@@ -201,7 +201,7 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
 
     def lookup_job(self, job_id: str) -> Union[None, AppSchedulerJob]:
         try:
-            job_state = DjangoJob.objects.get(id=job_id).job_state
+            job_state = DjangoJob.objects.get(id=job_id, deleted=False).job_state
             return self._reconstitute_job(job_state) if job_state else None
 
         except DjangoJob.DoesNotExist:
@@ -213,7 +213,7 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
 
     def get_next_run_time(self):
         try:
-            job = DjangoJob.objects.filter(next_run_time__isnull=False).earliest(
+            job = DjangoJob.objects.filter(next_run_time__isnull=False, deleted=False).earliest(
                 "next_run_time"
             )
             return get_apscheduler_datetime(job.next_run_time, self._scheduler)
@@ -242,7 +242,7 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
         # Acquire lock for update
         with transaction.atomic():
             try:
-                db_job = DjangoJob.objects.get(id=job.id)
+                db_job = DjangoJob.objects.get(id=job.id, deleted=False)
 
                 db_job.next_run_time = get_django_internal_datetime(job.next_run_time)
                 db_job.job_state = pickle.dumps(
@@ -256,7 +256,10 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
 
     def remove_job(self, job_id: str):
         try:
-            DjangoJob.objects.get(id=job_id).delete()
+            # soft deletion
+            job = DjangoJob.objects.get(id=job_id, deleted=False)
+            job.deleted = True
+            job.save()
         except DjangoJob.DoesNotExist:
             raise JobLookupError(job_id)
 
@@ -279,7 +282,7 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
     def _get_jobs(self, **filters):
         jobs = []
         failed_job_ids = set()
-
+        filters['deleted'] = False
         job_states = DjangoJob.objects.filter(**filters).values_list("id", "job_state")
         for job_id, job_state in job_states:
             try:
