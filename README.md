@@ -1,4 +1,4 @@
-Django APScheduler
+Django APScheduler (Cortico Fork)
 ==================
 
 This is a fork by Cortico to allow soft deletion of jobs, to prevent a race condition where jobs are deleted when executions still exist, in a case that does not allow cascaded deletion (likely due to transaction management). In addition, the soft deletion allows us to debug dynamically created jobs.
