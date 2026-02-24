@@ -229,6 +229,9 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
 
     def add_job(self, job: AppSchedulerJob):
         with transaction.atomic():
+            if DjangoJob.objects.filter(id=job.id).exists():
+                return self.update_job(job)
+
             try:
                 return DjangoJob.objects.create(
                     id=job.id,
@@ -242,12 +245,11 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
         # Acquire lock for update
         with transaction.atomic():
             try:
-                db_job = DjangoJob.objects.get(id=job.id, deleted=False)
+                db_job = DjangoJob.objects.get(id=job.id)
 
                 db_job.next_run_time = get_django_internal_datetime(job.next_run_time)
-                db_job.job_state = pickle.dumps(
-                    job.__getstate__(), self.pickle_protocol
-                )
+                db_job.job_state = pickle.dumps(job.__getstate__(), self.pickle_protocol)
+                db_job.deleted = False
 
                 db_job.save()
 
