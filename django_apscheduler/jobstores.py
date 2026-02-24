@@ -229,6 +229,9 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
 
     def add_job(self, job: AppSchedulerJob):
         with transaction.atomic():
+            if DjangoJob.objects.filter(id=job.id).exists():
+                return self.update_job(job)
+
             try:
                 return DjangoJob.objects.create(
                     id=job.id,
